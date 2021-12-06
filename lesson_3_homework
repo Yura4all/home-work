@@ -1,0 +1,56 @@
+--task1
+--Корабли: Для каждого класса определите число кораблей этого класса, потопленных в сражениях. Вывести: класс и число потопленных кораблей.
+select class, count(name)
+from ships 
+where name in (select ship from Outcomes where result='sunk')
+group by class;
+--task2
+--Корабли: Для каждого класса определите год, когда был спущен на воду первый корабль этого класса. Если год спуска на воду головного корабля неизвестен, определите минимальный год спуска на воду кораблей этого класса. Вывести: класс, год.
+select  class, min(launched) 
+from ships 
+group by class
+;
+
+--task3
+--Корабли: Для классов, имеющих потери в виде потопленных кораблей и не менее 3 кораблей в базе данных, вывести имя класса и число потопленных кораблей.
+select  * from
+(select class, count(ships) as count from ships where name in (select ship from Outcomes where result='sunk') group by class) a
+where count>=3
+;
+
+
+--task4
+--Корабли: Найдите названия кораблей, имеющих наибольшее число орудий среди всех кораблей такого же водоизмещения (учесть корабли из таблицы Outcomes).
+select t2.name
+from classes as t1
+join ships as t2
+on t1.class=t2.class
+join  (select   displacement, max(numguns) as numguns from classes as t1 group by displacement) t3
+on t1.displacement=t3.displacement and t1.numguns=t3.numguns
+;
+
+
+select maker, product.model, speed, min(ram)
+from product 
+join pc
+on product.model=pc.model
+where ram = (select min(ram) from pc) 
+group by maker, product.model, speed;
+
+--task5
+--Компьютерная фирма: Найдите производителей принтеров, которые производят ПК с наименьшим объемом RAM и с самым быстрым процессором среди всех ПК, имеющих наименьший объем RAM. Вывести: Maker
+
+
+with min_ram as
+	(
+	select min(ram) as min_ram from pc join product on product.model=pc.model where maker in
+		(select maker from product where type='Printer')
+	)
+select maker
+from product 
+join pc
+on product.model=pc.model
+where ram = (select min_ram from min_ram)
+and 
+speed = (select max(speed) from pc where ram = (select min_ram from min_ram));
+
